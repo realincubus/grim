@@ -8,7 +8,12 @@ using namespace std;
 
 class Potentials : public SHPData<Potential> {
 public:
-    Potentials ( std::string infile ) 
+
+    Potentials ( ) {
+
+    }
+
+    void load ( std::string infile ) 
     {
 	load_data( infile);
     }
@@ -16,3 +21,17 @@ public:
 
 };
 
+
+namespace boost {
+    namespace serialization {
+	 
+	template<class Archive>
+	void serialize(Archive & ar, Potentials& p, const unsigned int version)
+	{
+	    ar & p.shape_type;
+	    ar & p.objects;
+	    ar & p.csv_data;
+	}
+	 
+    } // namespace serialization
+} // namespace boost

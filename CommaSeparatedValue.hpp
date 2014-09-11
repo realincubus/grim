@@ -7,6 +7,9 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <map>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/string.hpp>
+#include <boost/serialization/map.hpp>
 
 using namespace std;
 
@@ -39,7 +42,6 @@ struct CommaSeparatedValue{
 	    return getDataAt( i , idx );
 	}
 
-    private:
 	std::map<string, int> map;
     };
 
@@ -157,3 +159,22 @@ struct CommaSeparatedValue{
         return table[index];
     }
 };
+
+
+namespace boost {
+    namespace serialization {
+	 
+	template<class Archive>
+	void serialize(Archive & ar, CommaSeparatedValue& p, const unsigned int version)
+	{
+	    ar & p.table;
+	}
+
+	template<class Archive>
+	void serialize(Archive & ar, CommaSeparatedValue::Table<vector<string>>& p, const unsigned int version)
+	{
+	    ar & p.map;
+	}
+	 
+    } // namespace serialization
+} // namespace boost

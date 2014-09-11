@@ -25,9 +25,14 @@ endif()
 SET( CMAKE_EXPORT_COMPILE_COMMANDS on )
 
 #INCLUDE_DIRECTORIES( )
-ADD_EXECUTABLE(bin_grim main.cpp )
+ADD_EXECUTABLE( bin_grim main.cpp )
+#ADD_EXECUTABLE( bin_grim_norm_roads main_roads.cpp )
+#ADD_EXECUTABLE( bin_grim_norm_buildings main_buildings.cpp )
 
-TARGET_LINK_LIBRARIES( bin_grim shp xbase64 )
+TARGET_LINK_LIBRARIES( bin_grim shp xbase64 boost_mpi mpi mpi_cxx
+    boost_serialization )
+#TARGET_LINK_LIBRARIES( bin_grim_norm_roads shp xbase64 )
+#TARGET_LINK_LIBRARIES( bin_grim_norm_buildings shp xbase64 )
 
 #ENABLE_TESTING()
 

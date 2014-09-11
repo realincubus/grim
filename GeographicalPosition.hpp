@@ -22,3 +22,15 @@ public:
 
     Point2D center;
 };
+
+namespace boost {
+    namespace serialization {
+	 
+	template<class Archive>
+	void serialize(Archive & ar, GeographicalPosition& p, const unsigned int version)
+	{
+	    ar & p.center;
+	}
+	 
+    } // namespace serialization
+} // namespace boost

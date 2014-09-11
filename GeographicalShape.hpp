@@ -7,12 +7,17 @@
 class GeographicalShape : public GeographicalPosition{
 public:
 
-    GeographicalShape ( SHPObject& object ) 
+    GeographicalShape ( ) {
+	shape = nullptr;
+    }
+
+    GeographicalShape ( SHPObject& object ) : shape( &object )
     {
 	center = calculate_center( object );
     }
     virtual ~GeographicalShape () {}
 
+    SHPObject* shape;
 protected:
 
     Point2D calculate_center(SHPObject& object) {

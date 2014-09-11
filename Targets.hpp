@@ -6,7 +6,11 @@
 
 class Targets : public SHPData<Target>{
 public:
-    Targets ( string infile ) 
+    Targets (){
+
+    }
+
+    void load( string infile ) 
     {
 	load_data( infile );
     }
@@ -15,3 +19,18 @@ public:
 private:
     /* data */
 };
+
+
+namespace boost {
+    namespace serialization {
+	 
+	template<class Archive>
+	void serialize(Archive & ar, Targets& p, const unsigned int version)
+	{
+	    ar & p.shape_type;
+	    ar & p.objects;
+	    ar & p.csv_data;
+	}
+	 
+    } // namespace serialization
+} // namespace boost
