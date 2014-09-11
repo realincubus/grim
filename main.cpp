@@ -1,95 +1,72 @@
 
-#include <iosfwd>
-#include <libshp/shapefil.h>
-#include <assert.h>
-#include <cmath>
-#include <fstream>
-#include <vector>
-#include <assert.h>
-#include <memory>
-#include <map>
-#include <iomanip>
-#include "CommaSeparatedValue.hpp"
-#include "NI.hpp"
 
-using namespace std;
+#include "Potentials.hpp"
+#include "Targets.hpp"
 
+// TODO merge into lambda
+double linear_decay( double d, double n, double decay ) noexcept {
+    return std::max(-decay * d + n, 0.0);
+}
 
-int main(int argc, char** argv) {
+void calculate_distances( Potentials& p, Targets& t) {
+    vector<double> target_ctr;
 
-    bool norm_targets = false;
-    bool norm_buildings = false;
-    bool target_arg_set = false;
-    bool building_arg_set = false;
-    bool area_arg_set = false;
-    string target_file_arg = "";
-    string target_file_csv_arg = "";
-    string building_file_arg = "";
-    string building_file_csv_arg = "";
-    string area_file_arg = "";
-    string area_file_csv_arg = "";
-    SHPHandle target_shape_file;
-    SHPHandle building_shape_file;
-    SHPHandle area_shape_file;
+    // TODO dont use local references to these types
+    auto& potential_csv = p.csv_data;
 
-    NI ni;
-    cout << "parsing arguments" << endl;
-    // parse command line arguments
-    if (argc > 1) {
-	auto arg = string(argv[1]);
-	if (arg.compare("-nr") == 0 || arg.compare("--normalize-targets") == 0){
-	    norm_targets = true;
-	}
-	if (arg.compare("-nb") == 0 || arg.compare("--normalize-buildings") == 0){
-	    norm_buildings = true;
-	}
-	if (norm_targets) {
-	    target_file_arg = string(argv[2]);
-	    target_arg_set = 1;
-	} else if (norm_buildings) {
-	    assert ( argc >= 3 );
-	    building_file_arg = string(argv[2]);
-	    building_arg_set = 1;
-	    area_file_arg = string(argv[3]);
-	    area_arg_set = 1;
-	    ni.offset = stoi( argv[4] );
-	    cout << "offset is " << ni.offset << endl;
-	} else {
-	    target_file_arg = string(argv[1]);
-	    target_arg_set = 1;
-	    building_file_arg = string(argv[2]);
-	    building_arg_set = 1;
+    target_ctr.reserve(t.objects.size());
+
+    // declare some functions for decay calculation
+    auto linear_decay_bind = [](double arg1){ return linear_decay(arg1,1,0.001); };
+    //auto constant_distance_bind = [&](double arg1){ return constant_distance(arg1, maxium_mobility_distance ); };
+
+    std::cout << "calculating" << std::endl;
+    // cycle over all t.objects
+    #pragma omp parallel for
+    for (int i = 0; i < t.objects.size(); ++i) {
+	auto& target_object = t.objects[i];
+	target_ctr[i] = 0.0;
+	// cycle over all p.objects
+	int ctr = 1;
+	for (auto & potential : p.objects) {
+	    auto& potential_object = potential;
+	    // thats the distance function 1 / x 
+	    //target_ctr[i] += reciprocal_decay( calculate_distance(target_object, potential_object));
+	    target_ctr[i] += linear_decay_bind( target_object.distance( potential_object ) ) * potential_object.potential;
+	    //target_ctr[i] += constant_distance_bind( calculate_distance(target_object, potential_object) );
+	    ctr++;
 	}
     }
 
-
-    // load all data from the files
-    cout << "loading file data" << endl;
-
-    if (target_arg_set) {
-	ni.load_target_data( target_file_arg );
+    ofstream gnuplot_file("raster.gp");
+    for (int i = 0; i < t.objects.size(); ++i){
+	auto& target_object = t.objects[i];
+	auto pt = target_object.center;
+	gnuplot_file << pt.first << " " << pt.second << " " << target_ctr[i] << std::endl;
     }
-    if (building_arg_set) {
-	ni.load_building_data( building_file_arg );
-    }
-    if (area_arg_set) {
-	ni.load_area_data( area_file_arg );
-    }
+    gnuplot_file.close();
 
-    cout << "starting shape file analysis" << endl;
+    std::cout << "done calculating" << std::endl;
 
-    // normalize data
-    if (norm_targets) {
-	ni.normalize_target_data();
-	exit(0);
-    }
-    if (norm_buildings) {
-	cout << "normalizing buildings" << endl;
-	ni.calculate_entities_per_building();
-	exit(0);
-    }
+    ofstream csv_file;
+    // put the results to test.csv 
+    // this can be loaded as a replacement for the old target.csv file
+    csv_file.open("test.csv");
 
-    ni.calculate_distances();
+    for (int i = 0; i < t.objects.size(); ++i) {
+	csv_file << i << "," << target_ctr[i] << endl;
+    }
+    csv_file.close();
+
+}
+
+int main(int argc, char** argv){
+    
+
+    Potentials p("potential_data.shp");
+    Targets t("target_data.shp");
+    
+    calculate_distances(p,t);
 
     return 0;
 }

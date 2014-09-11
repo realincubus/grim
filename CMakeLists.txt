@@ -25,7 +25,7 @@ endif()
 SET( CMAKE_EXPORT_COMPILE_COMMANDS on )
 
 #INCLUDE_DIRECTORIES( )
-ADD_EXECUTABLE(bin_grim main.cpp NI.cpp)
+ADD_EXECUTABLE(bin_grim main.cpp )
 
 TARGET_LINK_LIBRARIES( bin_grim shp xbase64 )
 
